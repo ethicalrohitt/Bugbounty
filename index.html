@@ -1,6 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Rohit Kailas Pawar (ethicalrohit) - Bug bounty hunter and security researcher from India. Recognized by NASA, U.S. Government, Telekom. CVE-2025-69614, CVE-2025-69615.">
+  <meta name="keywords" content="ethicalrohit, Rohit Kailas Pawar, bug bounty hunter India, ethical hacker India, CVE-2025-69614, CVE-2025-69615, security researcher India, NASA bug bounty, HackerOne researcher">
+  <meta name="author" content="Rohit Kailas Pawar - ethicalrohit">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://ethicalrohitt.github.io/bugbounty">
+
+  <!-- Open Graph (shows rich preview on WhatsApp, LinkedIn, Twitter) -->
+  <meta property="og:title" content="ethicalrohit — Bug Bounty Researcher | Rohit Kailas Pawar">
+  <meta property="og:description" content="Security researcher from India. Recognized by NASA, U.S. Government, DNFSB. 2 CVEs assigned. Account Takeover via OIDC Identity Binding flaw.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://ethicalrohitt.github.io/bugbounty">
+  <meta property="og:site_name" content="ethicalrohit - Security Research">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ethicalrohit | Rohit Kailas Pawar — Bug Bounty Researcher">
+  <meta name="twitter:description" content="Security researcher from India. NASA, U.S. Government acknowledged. CVE-2025-69614 & CVE-2025-69615 assigned.">
+  <meta name="twitter:creator" content="@ethicalrohit">
+
+  <!-- Schema.org Structured Data (Google rich results) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Rohit Kailas Pawar",
+    "alternateName": "ethicalrohit",
+    "description": "Bug bounty hunter and cybersecurity researcher from India",
+    "url": "https://ethicalrohitt.github.io/bugbounty",
+    "sameAs": [
+      "https://github.com/ethicalrohitt"
+    ],
+    "jobTitle": "Security Researcher / Bug Bounty Hunter",
+    "nationality": "Indian",
+    "knowsAbout": ["Bug Bounty", "OpenID Connect", "Account Takeover", "Penetration Testing", "Vulnerability Research"]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "I Found an Account Takeover by Reading a Spec, Not Running a Scanner",
+    "author": {
+      "@type": "Person",
+      "name": "Rohit Kailas Pawar",
+      "alternateName": "ethicalrohit"
+    },
+    "description": "How I found an OIDC-based account takeover vulnerability by reading the OpenID Connect specification instead of running automated scanners.",
+    "keywords": "bug bounty, OIDC, account takeover, OpenID Connect, identity binding, Google SSO"
+  }
+  </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>I Found an Account Takeover by Reading a Spec — ethicalrohit</title>
@@ -288,6 +340,17 @@
   }
   .about-name { font-size: 17px; font-weight: 600; color: #d8f0d8; margin-bottom: 4px; }
   .about-handle { font-size: 12px; color: #00e5a0; font-family: 'JetBrains Mono', monospace; }
+  .social-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1.25rem; }
+  .social-link {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    padding: 6px 14px; border-radius: 4px;
+    border: 1px solid #0d2318; background: #080f0b;
+    color: #00e5a0; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .social-link:hover { border-color: rgba(0,229,160,0.35); background: rgba(0,229,160,0.06); }
+  .social-icon { font-size: 13px; }
   .about-bio { font-size: 15px; color: #8fbfa0; line-height: 1.8; margin-bottom: 1.25rem; font-weight: 300; }
 
   .cve-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #4a8a60; font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; margin-top: 1.5rem; }
@@ -362,7 +425,7 @@
       <button class="copy-btn" onclick="navigator.clipboard.writeText('email = admin@clinic-example.com'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
     </div>
     <div class="code-block">
-      <span class="kw">email</span> = <span class="str">"admin@clinic-example.com"</span>  <span class="cm">// ← most devs look here first</span>
+      <span class="kw">email</span> = <span class="str">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4021242d292e00232c292e29236d2538212d302c256e232f2d">[email&#160;protected]</a>"</span>  <span class="cm">// ← most devs look here first</span>
     </div>
   </div>
 
@@ -393,9 +456,9 @@
     </div>
     <div class="code-block">
       <span class="cm">// Step 1 — Google returns identity data</span><br>
-      <span class="kw">email</span> = <span class="str">"admin@org.com"</span><br><br>
+      <span class="kw">email</span> = <span class="str">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c7a6a3aaaea987a8b5a0e9a4a8aa">[email&#160;protected]</a>"</span><br><br>
       <span class="cm">// Step 2 — App queries by email string</span><br>
-      <span class="val">SELECT</span> * <span class="val">FROM</span> users <span class="val">WHERE</span> email = <span class="str">'admin@org.com'</span><br><br>
+      <span class="val">SELECT</span> * <span class="val">FROM</span> users <span class="val">WHERE</span> email = <span class="str">'<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e687828b8f88a6899481c885898b">[email&#160;protected]</a>'</span><br><br>
       <span class="cm">// Step 3 — Logs that Google user into the found account</span><br>
       <span class="bad-line">login(found_account)  // ← account takeover lives here</span>
     </div>
@@ -427,7 +490,7 @@
   <div class="scenario">
     <div class="scenario-num">// scenario 01 — same org</div>
     <h4>Same email, completely different human</h4>
-    <p>An org uses a shared mailbox — <span class="ic">admin@clinic-example.com</span>. User A logs in, creates an account. The app links it to the email string.</p>
+    <p>An org uses a shared mailbox — <span class="ic"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="18797c757176587b747176717b357d60797568747d367b7775">[email&#160;protected]</a></span>. User A logs in, creates an account. The app links it to the email string.</p>
     <p>User A leaves. The org deprovisions their Google Workspace account and reassigns the same email to User B — a completely different person with a different <span class="ic">sub</span> value.</p>
     <p>User B clicks "Sign in with Google." Google authenticates them correctly. The app sees the same email string and logs User B straight into User A's account. <strong style="color:#ff4d4d;">Full account takeover.</strong> No payload. No exploit. Just broken identity logic.</p>
   </div>
@@ -521,6 +584,18 @@
       <p class="about-bio">Rohit Kailas Pawar, also known as Ethicalrohit, is a hacker and security researcher from India and an aspiring cybersecurity specialist and bug bounty hunter. With a strong passion for technology and expertise in vulnerability assessment and bug hunting, Rohit aims to safeguard digital assets and contribute to a more secure online community.</p>
       <p class="about-bio" style="margin-bottom:0;">His security research and responsible disclosures have been recognized by organizations including NASA, BOLT, the U.S. Government, the Defense Nuclear Facilities Safety Board, Telekom, and Fyers, among others, for identifying and reporting critical vulnerabilities.</p>
 
+      <div class="social-links">
+        <a class="social-link" href="https://www.linkedin.com/in/ethicalrohitt" target="_blank">
+          <span class="social-icon">in</span> LinkedIn
+        </a>
+        <a class="social-link" href="https://x.com/ethicalrohitt" target="_blank">
+          <span class="social-icon">X</span> @ethicalrohitt
+        </a>
+        <a class="social-link" href="https://medium.com/@ethicalrohit" target="_blank">
+          <span class="social-icon">M</span> Medium
+        </a>
+      </div>
+
       <div class="cve-label">// CVEs Assigned</div>
       <div class="cve-list">
         <div class="cve-item">
@@ -533,20 +608,4 @@
           <span class="cve-sep"></span>
           <span class="cve-desc">Two-Factor Authentication Bypass</span>
         </div>
-      </div>
-
-      <div class="hof-label">// Hall of Fame & Acknowledgements</div>
-      <div class="hof-list">
-        <span class="hof-item hl">NASA</span>
-        <span class="hof-item hl">U.S. Government</span>
-        <span class="hof-item hl">Defense Nuclear Facilities Safety Board</span>
-        <span class="hof-item">Telekom</span>
-        <span class="hof-item">BOLT</span>
-        <span class="hof-item">Fyers</span>
-      </div>
-    </div>
-  </div>
-
-</div>
-</body>
-</html>
+ 
