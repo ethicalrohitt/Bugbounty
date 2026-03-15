@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I Found an Account Takeover by Reading a Spec — ethicalrohit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: #0a0d0f;
+    color: #c8c8c8;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: #0a0d0f;
+    border-bottom: 1px solid #0d2318;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar-brand {
+    font-size: 17px;
+    font-weight: 700;
+    color: #00e5a0;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-brand::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: #00e5a0;
+    border-radius: 50%;
+  }
+  .topbar-right { display: flex; gap: 10px; align-items: center; }
+  .topbar-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid #0d2318;
+    color: #4a8a60;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .article { max-width: 740px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  .badge-row { display: flex; gap: 8px; margin-bottom: 1.75rem; flex-wrap: wrap; }
+  .badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+  .b-green { background: rgba(0,229,160,0.07); color: #00e5a0; border: 1px solid rgba(0,229,160,0.18); }
+  .b-dim   { background: rgba(0,229,160,0.03); color: #4a8a60; border: 1px solid #0d2318; }
+
+  h1.title {
+    font-size: clamp(22px, 3.5vw, 34px);
+    font-weight: 700;
+    color: #e8ffe8;
+    line-height: 1.25;
+    margin-bottom: 1.1rem;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 16.5px;
+    font-weight: 300;
+    color: #8fbfa0;
+    line-height: 1.65;
+    margin-bottom: 1.75rem;
+    border-left: 2px solid #00e5a0;
+    padding-left: 1rem;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12px;
+    color: #4a8a60;
+    padding: 12px 0;
+    border-top: 1px solid #0d2318;
+    border-bottom: 1px solid #0d2318;
+    margin-bottom: 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .meta-dot { color: #0d2318; }
+  .meta-green { color: #00e5a0; }
+
+  p { font-size: 16.5px; line-height: 1.9; color: #b8d4c0; margin-bottom: 1.4rem; font-weight: 300; }
+  p strong { color: #d8f0d8; font-weight: 600; }
+  p em { color: #6ab88a; font-style: italic; }
+
+  h2 {
+    font-size: 21px;
+    font-weight: 600;
+    color: #e8ffe8;
+    margin: 2.75rem 0 1rem;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 20px;
+    background: #00e5a0;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #4a8a60;
+    margin: 2rem 0 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .divider { border: none; border-top: 1px solid #0d2318; margin: 2.5rem 0; }
+
+  .pull-quote {
+    background: #080f0b;
+    border-left: 2px solid #00e5a0;
+    border-radius: 0 6px 6px 0;
+    padding: 1.25rem 1.5rem;
+    margin: 2rem 0;
+    font-size: 17px;
+    font-weight: 300;
+    color: #8fbfa0;
+    line-height: 1.65;
+    font-style: italic;
+  }
+
+  .code-wrap { margin: 1.75rem 0; }
+  .code-header {
+    background: #080f0b;
+    border: 1px solid #0d2318;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .code-header span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-family: 'JetBrains Mono', monospace; }
+  .lbl-bad  { color: #ff4d4d; }
+  .lbl-good { color: #00e5a0; }
+  .lbl-neu  { color: #4a8a60; }
+
+  .copy-btn {
+    font-size: 10px; color: #4a8a60; background: transparent; border: 1px solid #0d2318;
+    border-radius: 3px; padding: 3px 9px; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+  }
+  .copy-btn:hover { color: #00e5a0; border-color: rgba(0,229,160,0.25); }
+
+  .code-block {
+    background: #060a07;
+    border: 1px solid #0d2318;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    padding: 1.25rem 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.85;
+    overflow-x: auto;
+    color: #8fbfa0;
+  }
+  .kw  { color: #00e5a0; }
+  .val { color: #00c07a; }
+  .cm  { color: #1a3a25; font-style: italic; }
+  .str { color: #7adc9a; }
+  .bad-line  { color: #ff4d4d; }
+  .good-line { color: #00e5a0; }
+
+  .callout {
+    background: #060a07;
+    border: 1px solid #0d2318;
+    border-left: 2px solid #00c07a;
+    border-radius: 0 6px 6px 0;
+    padding: 1.25rem 1.5rem;
+    margin: 2rem 0;
+  }
+  .callout-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; color: #00c07a; margin-bottom: 0.6rem; font-family: 'JetBrains Mono', monospace; }
+  .callout p { font-size: 15px; margin: 0; color: #8fbfa0; line-height: 1.75; }
+
+  .scenario {
+    background: #060a07;
+    border: 1px solid #0d2318;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .scenario::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, #00e5a0, transparent);
+  }
+  .scenario-num { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; color: #4a8a60; margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace; }
+  .scenario h4 { font-size: 16px; font-weight: 600; color: #d8f0d8; margin-bottom: 0.85rem; }
+  .scenario p { font-size: 15px; margin-bottom: 0.65rem; color: #8fbfa0; }
+  .scenario p:last-child { margin-bottom: 0; }
+
+  .ic { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #080f0b; border: 1px solid #0d2318; padding: 2px 7px; border-radius: 3px; color: #00e5a0; }
+
+  .qs-block { margin: 1.5rem 0; }
+  .qs-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #0d2318; font-size: 15px; color: #8fbfa0; }
+  .qs-item:last-child { border-bottom: none; }
+  .qs-arrow { color: #00e5a0; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 3px; flex-shrink: 0; }
+
+  .impact-list { list-style: none; padding: 0; margin: 1rem 0; }
+  .impact-list li { display: flex; align-items: center; gap: 12px; font-size: 15.5px; color: #8fbfa0; padding: 9px 0; border-bottom: 1px solid #0d2318; font-weight: 300; }
+  .impact-list li:last-child { border-bottom: none; }
+  .idot { width: 5px; height: 5px; border-radius: 50%; background: #00e5a0; flex-shrink: 0; }
+
+  .final-card {
+    background: #060a07;
+    border: 1px solid #0d2318;
+    border-radius: 8px;
+    padding: 2.5rem 2rem;
+    margin-top: 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .final-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, #00e5a0, transparent);
+  }
+  .final-card .quote { font-size: 18px; font-weight: 300; color: #4a8a60; line-height: 1.7; margin-bottom: 1.25rem; font-style: italic; }
+  .final-card .quote em { color: #6ab88a; font-style: normal; }
+  .final-card .cta { font-size: 13px; font-weight: 600; color: #00e5a0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3rem; }
+  .tags span { font-size: 11px; padding: 4px 12px; border-radius: 3px; border: 1px solid #0d2318; color: #4a8a60; background: #060a07; font-family: 'JetBrains Mono', monospace; }
+
+  /* ABOUT SECTION */
+  .about-section { margin-top: 4rem; border-top: 1px solid #0d2318; padding-top: 2.5rem; }
+  .about-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em;
+    color: #00e5a0; font-family: 'JetBrains Mono', monospace; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .about-label::after { content: ''; flex: 1; height: 1px; background: #0d2318; }
+
+  .about-card {
+    background: #060a07;
+    border: 1px solid #0d2318;
+    border-radius: 8px;
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .about-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: #00e5a0;
+  }
+  .about-top { display: flex; align-items: center; gap: 16px; margin-bottom: 1.25rem; }
+  .about-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #00e5a0; font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+  .about-name { font-size: 17px; font-weight: 600; color: #d8f0d8; margin-bottom: 4px; }
+  .about-handle { font-size: 12px; color: #00e5a0; font-family: 'JetBrains Mono', monospace; }
+  .about-bio { font-size: 15px; color: #8fbfa0; line-height: 1.8; margin-bottom: 1.25rem; font-weight: 300; }
+
+  .cve-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #4a8a60; font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+  .cve-list { display: flex; flex-direction: column; gap: 8px; }
+  .cve-item {
+    display: flex; align-items: center; gap: 14px;
+    background: #080f0b; border: 1px solid #0d2318; border-radius: 5px; padding: 10px 14px;
+  }
+  .cve-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #00e5a0; flex-shrink: 0; min-width: 155px; }
+  .cve-sep { width: 1px; height: 16px; background: #0d2318; flex-shrink: 0; }
+  .cve-desc { font-size: 13px; color: #4a8a60; font-family: 'JetBrains Mono', monospace; }
+
+  .hof-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #4a8a60; font-family: 'JetBrains Mono', monospace; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+  .hof-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hof-item { font-size: 11px; padding: 4px 12px; border-radius: 3px; border: 1px solid #0d2318; color: #4a8a60; background: #080f0b; font-family: 'JetBrains Mono', monospace; }
+  .hof-item.hl { border-color: rgba(0,229,160,0.2); color: #00e5a0; background: rgba(0,229,160,0.04); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-brand">ethicalrohit</span>
+  <div class="topbar-right">
+    <span class="topbar-tag">bug-bounty</span>
+    <span class="topbar-tag">oidc</span>
+    <span class="topbar-tag">6 min read</span>
+  </div>
+</div>
+
+<div class="article">
+
+  <div class="badge-row">
+    <span class="badge b-green">OpenID Connect</span>
+    <span class="badge b-green">Account Takeover</span>
+    <span class="badge b-dim">Identity Binding</span>
+    <span class="badge b-dim">Google SSO</span>
+  </div>
+
+  <h1 class="title">I Found an Account Takeover by Reading a Spec, Not Running a Scanner</h1>
+  <p class="subtitle">The login looked completely normal. The bug was one line of wrong logic. That's exactly what made it dangerous.</p>
+
+  <div class="meta">
+    <span class="meta-green">ethicalrohit</span>
+    <span class="meta-dot">·</span>
+    <span>6 min read</span>
+    <span class="meta-dot">·</span>
+    <span>bug bounty · oidc · real bugs</span>
+  </div>
+
+  <p>Most bug bounty content is a recycling loop. Same recon tips. Same payload lists. Same "how I found XSS" stories that sound deep but don't actually teach you how real systems work.</p>
+  <p>I was stuck in that loop. Past beginner level, but not consistently finding anything meaningful. I had the workflow down — auth tests, edge cases, common web bugs — but it all felt surface-level.</p>
+  <p>The shift happened when I stopped reading writeups and started reading <strong>actual specs</strong>. This bug came directly from that.</p>
+
+  <hr class="divider">
+
+  <h2>Introduction</h2>
+  <p>The target supported <strong>Sign in with Google</strong> through OpenID Connect. Standard stuff — user clicks the Google button, Google authenticates them, app receives identity data, user gets logged in.</p>
+  <p>At first glance, nothing looked strange. But I kept reading the OIDC specification, and one thing kept nagging at me: the application was treating the user's <strong>email address</strong> as their identity.</p>
+
+  <div class="pull-quote">Email is not the stable identity in OpenID Connect. That sounds like a small detail. It's the entire bug.</div>
+
+  <p>Email is a mutable attribute — useful, displayable, storable. But it is not permanent. It can be reassigned, recycled, or returned under a completely different real-world owner. The spec is explicit about this. The application was not following it.</p>
+
+  <hr class="divider">
+
+  <h2>The Part Most Implementations Get Wrong</h2>
+  <p>When an OpenID Connect provider authenticates a user, it returns claims inside an ID token. Most developers see the payload and immediately focus on one field:</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="lbl-neu">ID Token Claims</span>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('email = admin@clinic-example.com'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+    </div>
+    <div class="code-block">
+      <span class="kw">email</span> = <span class="str">"admin@clinic-example.com"</span>  <span class="cm">// ← most devs look here first</span>
+    </div>
+  </div>
+
+  <p>And the logic that follows feels natural: same email = same user. <em>It's wrong.</em></p>
+  <p>The <strong>stable identity</strong> in OIDC is the combination of two claims:</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="lbl-good">Stable Identity — OIDC Spec</span>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('iss + sub'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+    </div>
+    <div class="code-block">
+      <span class="kw">iss</span>  <span class="cm">// issuer — who is asserting this identity</span><br>
+      <span class="kw">sub</span>  <span class="cm">// subject — unique, permanent ID for this user at that issuer</span><br><br>
+      <span class="cm">// This pair should bind the local account. Not email.</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h2>What the Vulnerable Logic Looked Like</h2>
+
+  <h3>// what the app was doing — wrong</h3>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="lbl-bad">Vulnerable</span>
+      <button class="copy-btn" onclick="this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+    </div>
+    <div class="code-block">
+      <span class="cm">// Step 1 — Google returns identity data</span><br>
+      <span class="kw">email</span> = <span class="str">"admin@org.com"</span><br><br>
+      <span class="cm">// Step 2 — App queries by email string</span><br>
+      <span class="val">SELECT</span> * <span class="val">FROM</span> users <span class="val">WHERE</span> email = <span class="str">'admin@org.com'</span><br><br>
+      <span class="cm">// Step 3 — Logs that Google user into the found account</span><br>
+      <span class="bad-line">login(found_account)  // ← account takeover lives here</span>
+    </div>
+  </div>
+
+  <h3>// what it should have done — correct</h3>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="lbl-good">Correct</span>
+      <button class="copy-btn" onclick="this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+    </div>
+    <div class="code-block">
+      <span class="cm">// Step 1 — Google returns identity data</span><br>
+      <span class="kw">iss</span> = <span class="str">"accounts.google.com"</span><br>
+      <span class="kw">sub</span> = <span class="str">"1049302847362810"</span>  <span class="cm">// unique, stable, never changes</span><br><br>
+      <span class="cm">// Step 2 — App queries by stable identity pair</span><br>
+      <span class="val">SELECT</span> * <span class="val">FROM</span> users <span class="val">WHERE</span> iss = ? <span class="val">AND</span> sub = ?<br><br>
+      <span class="cm">// Step 3 — Only login if the stable identity matches</span><br>
+      <span class="good-line">login(verified_account)  // ← safe</span>
+    </div>
+  </div>
+
+  <p>The app wasn't asking <em>"is this the same Google identity as before?"</em> — it was asking <em>"does this login return the same email string?"</em> Those are not the same question.</p>
+
+  <hr class="divider">
+
+  <h2>Two Real-World Attack Scenarios</h2>
+
+  <div class="scenario">
+    <div class="scenario-num">// scenario 01 — same org</div>
+    <h4>Same email, completely different human</h4>
+    <p>An org uses a shared mailbox — <span class="ic">admin@clinic-example.com</span>. User A logs in, creates an account. The app links it to the email string.</p>
+    <p>User A leaves. The org deprovisions their Google Workspace account and reassigns the same email to User B — a completely different person with a different <span class="ic">sub</span> value.</p>
+    <p>User B clicks "Sign in with Google." Google authenticates them correctly. The app sees the same email string and logs User B straight into User A's account. <strong style="color:#ff4d4d;">Full account takeover.</strong> No payload. No exploit. Just broken identity logic.</p>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-num">// scenario 02 — expired domain</div>
+    <h4>Domain expires, mailboxes get recycled</h4>
+    <p>An organization shuts down. Domain expires. Someone else registers the same domain and recreates old-looking mailboxes.</p>
+    <p>If the platform still has accounts tied to those email strings — and the login only trusts the email claim — <strong style="color:#ff4d4d;">the new mailbox owner just inherited access to someone else's account.</strong> Different person. Different country. Same email string.</p>
+  </div>
+
+  <hr class="divider">
+
+  <h2>Why This Bug Gets Underestimated</h2>
+  <p>There's no script popup. No SQL error. No "hacked" splash screen. Nothing flashy to post anywhere.</p>
+
+  <div class="callout">
+    <div class="callout-label">// the dangerous part</div>
+    <p>The login looks completely legitimate from the application's point of view. Google authenticated the user correctly — it did its job. The break happens entirely in how the app chose to bind that authenticated identity to a local account. Nothing is broken at the provider level.</p>
+  </div>
+
+  <p>But the impact is real. If that account holds private messages, stored documents, privileged settings, or sensitive records — logging the wrong person in is a full confidentiality failure.</p>
+
+  <hr class="divider">
+
+  <h2>Why Tools Won't Find This</h2>
+  <p>No scanner is going to flag this. No pattern to match, no response code to check. You can run every automated tool in your kit and walk away thinking the login flow is clean.</p>
+  <p>This class of bug only surfaces when you ask <strong>protocol questions</strong>, not payload questions:</p>
+
+  <div class="qs-block">
+    <div class="qs-item"><span class="qs-arrow">→</span><span>What exactly is this app using as the account key?</span></div>
+    <div class="qs-item"><span class="qs-arrow">→</span><span>Is it trusting <span class="ic">email</span>, or trusting <span class="ic">iss + sub</span>?</span></div>
+    <div class="qs-item"><span class="qs-arrow">→</span><span>What happens if the mailbox changes owners?</span></div>
+    <div class="qs-item"><span class="qs-arrow">→</span><span>What if the same email returns under a different Google identity?</span></div>
+    <div class="qs-item"><span class="qs-arrow">→</span><span>What if the domain expires and gets re-registered?</span></div>
+  </div>
+
+  <hr class="divider">
+
+  <h2>The Root Cause in One Sentence</h2>
+  <p>The application used <span class="ic">email</span> as identity, when it should have used <span class="ic">iss + sub</span>. That single decision is enough to turn a standard Google login flow into an account takeover condition.</p>
+
+  <h2>What the Correct Fix Looks Like</h2>
+  <p>On first login via Google, store the <span class="ic">iss</span> and <span class="ic">sub</span> claims alongside the account. On every future login, match on those — not on email.</p>
+  <p>Email can still be stored. Displayed. Used for communication. But it should never be the thing that answers: <em>is this the same person who created this account?</em> That decision belongs to the stable provider identity.</p>
+
+  <hr class="divider">
+
+  <h2>The Bigger Lesson</h2>
+  <p>Real vulnerabilities often don't come from clever payloads. They come from knowing how a protocol is supposed to work, then noticing the implementation quietly violates that contract. That gap is where strong bugs live:</p>
+
+  <ul class="impact-list">
+    <li><span class="idot"></span>OAuth misconfigurations</li>
+    <li><span class="idot"></span>OIDC account confusion (this bug)</li>
+    <li><span class="idot"></span>SAML validation gaps</li>
+    <li><span class="idot"></span>JWT handling mistakes</li>
+    <li><span class="idot"></span>Session binding flaws</li>
+    <li><span class="idot"></span>Account recovery edge cases</li>
+  </ul>
+
+  <p>None of these are as glamorous as XSS looks online. But they're often far more meaningful. And most of them become easier to spot once you stop only reading writeups and start reading the docs those writeups never mention.</p>
+
+  <div class="final-card">
+    <p class="quote"><em>"One teaches you what other people already found.<br>The other teaches you how to see what they missed."</em></p>
+    <p class="cta">// read the specs. the real bugs are in there.</p>
+  </div>
+
+  <div class="tags">
+    <span>#bugbounty</span>
+    <span>#oidc</span>
+    <span>#accounttakeover</span>
+    <span>#cybersecurity</span>
+    <span>#hackerone</span>
+    <span>#googlesso</span>
+    <span>#infosec</span>
+    <span>#openidconnect</span>
+  </div>
+
+  <!-- ABOUT THE RESEARCHER -->
+  <div class="about-section">
+    <div class="about-label">About the Researcher</div>
+    <div class="about-card">
+      <div class="about-top">
+        <div class="about-avatar">ER</div>
+        <div>
+          <div class="about-name">Rohit Kailas Pawar</div>
+          <div class="about-handle">@ethicalrohit</div>
+        </div>
+      </div>
+
+      <p class="about-bio">Rohit Kailas Pawar, also known as Ethicalrohit, is a hacker and security researcher from India and an aspiring cybersecurity specialist and bug bounty hunter. With a strong passion for technology and expertise in vulnerability assessment and bug hunting, Rohit aims to safeguard digital assets and contribute to a more secure online community.</p>
+      <p class="about-bio" style="margin-bottom:0;">His security research and responsible disclosures have been recognized by organizations including NASA, BOLT, the U.S. Government, the Defense Nuclear Facilities Safety Board, Telekom, and Fyers, among others, for identifying and reporting critical vulnerabilities.</p>
+
+      <div class="cve-label">// CVEs Assigned</div>
+      <div class="cve-list">
+        <div class="cve-item">
+          <span class="cve-id">CVE-2025-69614</span>
+          <span class="cve-sep"></span>
+          <span class="cve-desc">Account Takeover (ATO)</span>
+        </div>
+        <div class="cve-item">
+          <span class="cve-id">CVE-2025-69615</span>
+          <span class="cve-sep"></span>
+          <span class="cve-desc">Two-Factor Authentication Bypass</span>
+        </div>
+      </div>
+
+      <div class="hof-label">// Hall of Fame & Acknowledgements</div>
+      <div class="hof-list">
+        <span class="hof-item hl">NASA</span>
+        <span class="hof-item hl">U.S. Government</span>
+        <span class="hof-item hl">Defense Nuclear Facilities Safety Board</span>
+        <span class="hof-item">Telekom</span>
+        <span class="hof-item">BOLT</span>
+        <span class="hof-item">Fyers</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
